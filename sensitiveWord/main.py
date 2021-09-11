@@ -21,8 +21,8 @@ def nmsl(word, words1, words2, words3, words4, step, len, _list, result, _rever)
              appendList(_list.copy(), words3[step]), result, _rever)
         nmsl(word, words1, words2, words3, words4, step+1, len,
              appendList(_list.copy(), '\\' + words2[step]), result, _rever)
-        nmsl(word, words1, words2, words3, words4, step+1, len,
-             appendList(_list.copy(), '\\' + words4[step]), result, _rever)
+        # nmsl(word, words1, words2, words3, words4, step+1, len,
+        #     appendList(_list.copy(), '\\' + words4[step]), result, _rever)
         return result
 
 
@@ -56,7 +56,7 @@ for index, item in enumerate(words):
 
 for index, item in enumerate(org):
     org[index] = item.strip('\n')
-# 敏感词库
+# 敏感词库 words1为原敏感词的
 words1 = []
 words2 = []
 words3 = []
