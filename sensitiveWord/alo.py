@@ -1,24 +1,15 @@
 def is_chinese(uchar):
     # 判断一个unicode是否是汉字
-    if u'\u4e00' <= uchar <= u'\u9fa5':
-        return True
-    else:
-        return False
+    return u'\u4e00' <= uchar <= u'\u9fa5'
 
 
 def is_alphabet(uchar):
     # 判断一个unicode是否是英文字母
-    if (u'\u0041' <= uchar <= u'\u005a') or (u'\u0061' <= uchar <= u'\u007a'):
-        return True
-    else:
-        return False
+    return (u'\u0041' <= uchar <= u'\u005a') or (u'\u0061' <= uchar <= u'\u007a')
 
 
 def is_Illegal(uchar):
-    if not (is_chinese(uchar) or is_alphabet(uchar)):
-        return True
-    else:
-        return False
+    return not (is_chinese(uchar) or is_alphabet(uchar))
 
 
 class Node(object):
@@ -46,12 +37,14 @@ class Ahocorasick(object):
 
     def make(self):
         # 构建失败路径
-        tmpQueue = list()
+        tmpQueue = []
         tmpQueue.append(self.__root)
         while len(tmpQueue) > 0:
             temp = tmpQueue.pop()
             p = None
-            for k, v in temp.next.items():
+            for k in temp.next.items():
+                # 得到的K是tuple，我们需要tuple的key
+                k = k[0]
                 if temp == self.__root:
                     temp.next[k].fail = self.__root
                 else:
