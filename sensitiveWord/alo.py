@@ -65,12 +65,21 @@ class Ahocorasick(object):
                         temp.next[k].fail = self.__root
                 tmpQueue.append(temp.next[k])
 
-    def search(self, content, Hanzi_to_pinyin):
+    def search(self, content, Hanzi_to_pinyin, _bushou):
         # 返回列表，每个元素为匹配的模式串在句中的起止位置
         result = []
         startWordIndex = 0
         for currentPosition in range(len(content)):
             p = self.__root
+            if content[currentPosition] in _bushou:
+                endPosition = currentPosition + \
+                    len(_bushou[content[currentPosition]])
+                sensitiveWord_bushou = _bushou[content[currentPosition]]
+                # print(sensitiveWord_bushou)
+                # print("".join(content[currentPosition:endPosition]))
+                if endPosition-1 <= len(content) and sensitiveWord_bushou == "".join(content[currentPosition:endPosition]):
+                    result.append(
+                        (currentPosition, endPosition - 1, sensitiveWord_bushou))
             word = Hanzi_to_pinyin.convert(content[currentPosition])[0]
             endWordIndex = currentPosition
             sensitiveWord = []
@@ -109,14 +118,4 @@ class Ahocorasick(object):
                     del(sensitiveWord[0:len(sensitiveWord) - p.depth])
                 if p == self.__root:
                     break
-        return result
-
-    def replace(self, content):
-       # 匹配到的字符串以'*'号表示
-        replacepos = self.search(content)
-        result = content
-        for posindex in replacepos:
-            result = result[0:posindex[0]] + \
-                (posindex[1] - posindex[0] + 1) * \
-                '*' + content[posindex[1] + 1:]
         return result

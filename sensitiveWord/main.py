@@ -7,22 +7,19 @@ from alo import is_chinese
 from os import path
 
 
-def nmsl(word, words1, words2, words3, words4, step, len, _list, result, _rever):
+# 敏感词递归全排列
+def _arrangement(word, words1, words2, words3, words4, step, len, _list, result, _rever):
     if step == len:
         result.append(_list)
         _rever.setdefault("".join(_list), word)
-        return result
+        return
     else:
-        # nmsl(word, words1, words2, words3, words4, step+1, len,
-        #     appendList(_list.copy(), words1[step]), result, _rever)
-        nmsl(word, words1, words2, words3, words4, step+1, len,
-             appendList(_list.copy(), words2[step]), result, _rever)
-        nmsl(word, words1, words2, words3, words4, step+1, len,
-             appendList(_list.copy(), words3[step]), result, _rever)
-        nmsl(word, words1, words2, words3, words4, step+1, len,
-             appendList(_list.copy(), '\\' + words2[step]), result, _rever)
-        # nmsl(word, words1, words2, words3, words4, step+1, len,
-        #     appendList(_list.copy(), '\\' + words4[step]), result, _rever)
+        _arrangement(word, words1, words2, words3, words4, step+1, len,
+                     appendList(_list.copy(), words2[step]), result, _rever)
+        _arrangement(word, words1, words2, words3, words4, step+1, len,
+                     appendList(_list.copy(), words3[step]), result, _rever)
+        _arrangement(word, words1, words2, words3, words4, step+1, len,
+                     appendList(_list.copy(), '\\' + words2[step]), result, _rever)
         return result
 
 
@@ -37,16 +34,16 @@ chai_zi = json.load(fp)
 fp.close()
 
 # 导入初始的敏感词
-# wordsFile = open(sys.argv[1], encoding='UTF-8')
-wordsFile = open(path.dirname(
-    __file__) + '\\static\\words.txt', encoding='UTF-8')
+wordsFile = open(sys.argv[1], encoding='UTF-8')
+# wordsFile = open(path.dirname(
+#   __file__) + '\\static\\words.txt', encoding='UTF-8')
 words = wordsFile.readlines()
 wordsFile.close()
 
 # 导入需过滤文件
-# orgFile = open(sys.argv[2], encoding='UTF-8')
-orgFile = open(path.dirname(
-    __file__) + '\\static\\org.txt', encoding='UTF-8')
+orgFile = open(sys.argv[2], encoding='UTF-8')
+# orgFile = open(path.dirname(
+#    __file__) + '\\static\\org.txt', encoding='UTF-8')
 org = orgFile.readlines()
 orgFile.close()
 
@@ -56,14 +53,18 @@ for index, item in enumerate(words):
 
 for index, item in enumerate(org):
     org[index] = item.strip('\n')
-# 敏感词库 words1为原敏感词的
+# 敏感词库 words1为原敏感词的拆分数组，
+# words2为拼音形式，
+# words3为拼音形式的首字母，
+# words4为部首拆分数组.
 words1 = []
 words2 = []
 words3 = []
 words4 = []
+# list化敏感词，构成words1
 for item in words:
     words1.append(list(item))
-# 汉字转拼音
+# 汉字转拼音，构成words2
 Hanzi_to_pinyin = Hanzi2Pinyin()
 for index, word in enumerate(words):
     words4.append([])
@@ -73,9 +74,11 @@ for index, word in enumerate(words):
     _words = []
     for i in list(_str):
         _words.append(i[0])
+    # 提取拼音首字母，构成words3
     words3.append(_words)
+    # 拆分部首，构成words4
     for char in word:
-        words4[index].append(chai_zi.setdefault(char))
+        words4[index].append(chai_zi.setdefault(char, char))
 
 # print(words1)
 # print(words2)
@@ -90,40 +93,25 @@ for word in words:
         pass
     else:
         _rever.setdefault(word, word)
-"""
-for out_index, item in enumerate(words1):
-    if is_chinese(item[0]):
-        # 存放组合的临时数组
-        __temp = []
-        __temp.append(words1[out_index])
-        __temp.append(words2[out_index])
-        __temp.append(words3[out_index])
-        for i in range(len(item)):
-            for j in range(len(item)):
-                for k in range(len(item)):
-                    _str = ''
-                    for length in range(len(item)):
-                        if length == 0:
-                            _str += __temp[i][length]
-                        if length == 1:
-                            _str += __temp[j][length]
-                        if length == 2:
-                            _str += __temp[k][length]
-                    lastWords.append(_str)
-                    # _rever字典用于将最终的“乱码”敏感词转换为正常敏感词，在<>中显示
-                    _rever.setdefault(_str, words[out_index])
-    else:
-        lastWords.append(words[out_index])
-"""
+
+# 构成最终敏感词库
 for i in range(len(words)):
     if is_chinese(words1[i][0]):
-        result = nmsl(words[i], words1[i], words2[i],
-                      words3[i], words4[i], 0, len(words1[i]), [], [], _rever)
+        result = _arrangement(words[i], words1[i], words2[i],
+                              words3[i], words4[i], 0, len(words1[i]), [], [], _rever)
         for word in result:
             lastWords.append(word)
     else:
         lastWords.append(words[i])
 ans = []
+
+# 部首检测专用字典
+_bushou = {}
+for index, item in enumerate(words4):
+    _bushou.setdefault(item[0][0], "".join(item))
+    _rever.setdefault("".join(item), words[index])
+# 此方法无法检测部首拆分后中间增加干扰，或不完全拆分
+
 ans_num = 0
 # 调用Aho类实现过滤
 ahoTree = Ahocorasick()
@@ -133,10 +121,7 @@ for word in lastWords:
 ahoTree.make()
 for index, sentence in enumerate(org):
     # 英文拼音均转为小写进行比较
-    result = ahoTree.search(sentence.lower(), Hanzi_to_pinyin)
-    # print("".join(Hanzi_to_pinyin.convert(sentence)).lower())
-    # result = ahoTree.search(
-    #    "".join(Hanzi_to_pinyin.convert(sentence)).lower())
+    result = ahoTree.search(sentence.lower(), Hanzi_to_pinyin, _bushou)
     if result != []:
         for index2, i in enumerate(result):
             for j in result:
@@ -146,14 +131,12 @@ for index, sentence in enumerate(org):
             ans_num = ans_num + 1
             ans.append('Line%d: <%s> %s' %
                        (index+1, _rever.setdefault((k[2])), sentence[k[0]:(k[1]+1)]))
-#            ans.append('Line%d: <%s> %s' %
-#                      (index+1, (k[2]), sentence[k[0]:(k[1]+1)]))
 
 ans.insert(0, 'total: ' + str(ans_num))
 
-# ansFile = open(sys.argv[3], 'w', encoding='UTF-8')
-ansFile = open(path.dirname(
-    __file__) + '\\static\\ans.txt', 'w', encoding='UTF-8')
+ansFile = open(sys.argv[3], 'w', encoding='UTF-8')
+# ansFile = open(path.dirname(
+#    __file__) + '\\static\\ans.txt', 'w', encoding='UTF-8')
 for i in ans:
     ansFile.write(i + '\n')
 ansFile.close()
