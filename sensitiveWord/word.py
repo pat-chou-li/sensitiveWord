@@ -18,7 +18,7 @@ class sensitiveWord():
     chai_zi = {}
     lastWords = []
     ans = []
-    _bushou = {}
+    _bushou = []
     ans_num = 0
     org = []
     Hanzi_to_pinyin = ''
@@ -72,7 +72,10 @@ class sensitiveWord():
     def _arrangement(self, word, words1, words2, words3, words4, step, len, _list, result):
         if step == len:
             result.append(_list)
-            self._rever.setdefault("".join(_list), word)
+            _listTemp = _list.copy()
+            for index, element in enumerate(_listTemp):
+                _listTemp[index] = element.strip('\\')
+            self._rever.setdefault("".join(_listTemp), word)
             return
         else:
             self._arrangement(word, words1, words2, words3, words4, step+1, len,
@@ -81,6 +84,8 @@ class sensitiveWord():
                               self.appendList(_list.copy(), words3[step]), result)
             self._arrangement(word, words1, words2, words3, words4, step+1, len,
                               self.appendList(_list.copy(), '\\' + words2[step]), result)
+            self._arrangement(word, words1, words2, words3, words4, step+1, len,
+                              self.appendList(_list.copy(), '\\' + words4[step]), result)
             return result
 
     # 浅拷贝
@@ -102,17 +107,17 @@ class sensitiveWord():
     # 生成部首检测专用字典
     def createBushou(self):
         for index, item in enumerate(self.words4):
-            self._bushou.setdefault(item[0][0], "".join(item))
-            self._rever.setdefault("".join(item), self.words[index])
+            for in_element in item:
+                for char in in_element:
+                    if is_chinese(char):
+                        self._bushou.append(char)
 
     # 实现过滤
     def getAnswer(self):
         # 调用Aho类实现过滤
-        ahoTree = Ahocorasick()
+        ahoTree = Ahocorasick(self._rever)
         for word in self.lastWords:
             ahoTree.addWord(word)
-        # 构造失配指针
-        ahoTree.make()
         for index, sentence in enumerate(self.org):
             # 英文拼音均转为小写进行比较
             result = ahoTree.search(
