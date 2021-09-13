@@ -25,7 +25,8 @@ class sensitiveWord():
 
     #   初始化敏感词和原文
     def __init__(self, words, org):
-        self.words = words
+        for item in words:
+            self.words.append(item.lower())
         self.org = org
         fp = open(path.join(path.dirname(
             __file__), 'chai_zi.json'), 'r', encoding='utf-8')
