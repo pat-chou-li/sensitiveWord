@@ -15,6 +15,7 @@ class sensitiveWord():
     words4 = []
     result = []
     _rever = {}
+    _rever2 = {}
     chai_zi = {}
     lastWords = []
     ans = []
@@ -25,6 +26,9 @@ class sensitiveWord():
 
     #   初始化敏感词和原文
     def __init__(self, words, org):
+        for item in words:
+            item = item.strip('\n')
+            self._rever2.setdefault(item.lower(), item)
         for item in words:
             self.words.append(item.lower())
         self.org = org
@@ -131,7 +135,7 @@ class sensitiveWord():
                 for k in result:
                     self.ans_num += 1
                     self.ans.append('Line%d: <%s> %s' %
-                                    (index+1, self._rever.setdefault((k[2])), sentence[k[0]:(k[1]+1)]))
+                                    (index+1, self._rever2.setdefault(self._rever.setdefault((k[2]))), sentence[k[0]:(k[1]+1)]))
 
-        self.ans.insert(0, 'total: ' + str(self.ans_num))
+        self.ans.insert(0, 'Total: ' + str(self.ans_num))
         return self.ans
